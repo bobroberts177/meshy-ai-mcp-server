@@ -1,23 +1,23 @@
 export interface RequestOptions {
   query?: Record<string, string | number | boolean | undefined>;
-  timeoutMs?: number;
+  timeout?: number;
   acceptStream?: boolean;
 }
 
 export interface MeshyClientOptions {
   apiBase?: string;
-  streamTimeoutMs?: number;
+  streamTimeout?: number;
 }
 
 export class MeshyClient {
   private readonly apiKey: string;
   private readonly apiBase: string;
-  private readonly defaultStreamTimeoutMs: number;
+  private readonly defaultStreamTimeout: number;
 
-  constructor(apiKey: string, { apiBase, streamTimeoutMs }: MeshyClientOptions = {}) {
+  constructor(apiKey: string, { apiBase, streamTimeout }: MeshyClientOptions = {}) {
     this.apiKey = apiKey;
     this.apiBase = (apiBase ?? "https://api.meshy.ai/openapi").replace(/\/$/, "");
-    this.defaultStreamTimeoutMs = streamTimeoutMs ?? 300_000;
+    this.defaultStreamTimeout = streamTimeout ?? 300;
   }
 
   async get(path: string, options: RequestOptions = {}): Promise<unknown> {
@@ -25,7 +25,7 @@ export class MeshyClient {
     const response = await fetch(url, {
       method: "GET",
       headers: this.headers(options.acceptStream),
-      signal: this.buildAbortSignal(options.timeoutMs),
+      signal: this.buildAbortSignal(options.timeout),
     });
 
     await this.ensureOk(response, url);
@@ -38,19 +38,31 @@ export class MeshyClient {
       method: "POST",
       headers: this.headers(options.acceptStream),
       body: JSON.stringify(body),
-      signal: this.buildAbortSignal(options.timeoutMs),
+      signal: this.buildAbortSignal(options.timeout),
     });
 
     await this.ensureOk(response, url);
     return response.json();
   }
 
-  async stream(path: string, timeoutMs?: number): Promise<unknown> {
+  async delete(path: string, options: RequestOptions = {}): Promise<unknown> {
+    const url = this.buildUrl(path, options.query);
+    const response = await fetch(url, {
+      method: "DELETE",
+      headers: this.headers(options.acceptStream),
+      signal: this.buildAbortSignal(options.timeout),
+    });
+
+    await this.ensureOk(response, url);
+    return response.json();
+  }
+
+  async stream(path: string, timeout?: number): Promise<unknown> {
     const url = this.buildUrl(path);
     const response = await fetch(url, {
       method: "GET",
       headers: this.headers(true),
-      signal: this.buildAbortSignal(timeoutMs ?? this.defaultStreamTimeoutMs),
+      signal: this.buildAbortSignal(timeout ?? this.defaultStreamTimeout),
     });
 
     await this.ensureOk(response, url);
@@ -142,8 +154,8 @@ export class MeshyClient {
     throw new Error(`Meshy API request failed (${response.status}) for ${url}: ${bodyText}`);
   }
 
-  private buildAbortSignal(timeoutMs?: number): AbortSignal | undefined {
-    if (!timeoutMs) return undefined;
-    return AbortSignal.timeout(timeoutMs);
+  private buildAbortSignal(timeoutSec?: number): AbortSignal | undefined {
+    if (!timeoutSec) return undefined;
+    return AbortSignal.timeout(timeoutSec * 1000);
   }
 }
