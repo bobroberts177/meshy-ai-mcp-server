@@ -214,10 +214,7 @@ server.registerTool(
       resize_height: z.number().optional(),
       origin_at: z.enum(["bottom", "center"]).optional(),
       convert_format_only: z.boolean().optional(),
-    })
-      .refine((data) => data.input_task_id || data.model_url, {
-        message: "Either input_task_id or model_url must be provided",
-      }),
+    }),
   },
   async (args) => jsonResponse(await client.post("/v1/remesh", args)),
 );
@@ -276,10 +273,7 @@ server.registerTool(
       model_url: z.string().optional(),
       height_meters: z.number().positive().optional(),
       texture_image_url: z.string().optional(),
-    })
-      .refine((data) => data.input_task_id || data.model_url, {
-        message: "Either input_task_id or model_url must be provided",
-      }),
+    }),
   },
   async (request) => jsonResponse(await client.post("/v1/rigging", request)),
 );
@@ -379,13 +373,7 @@ server.registerTool(
       enable_pbr: z.boolean().optional(),
       remove_lighting: z.boolean().optional(),
       target_formats: z.array(z.enum(["glb", "obj", "fbx", "stl", "usdz"])).optional(),
-    })
-      .refine((data) => data.input_task_id || data.model_url, {
-        message: "Either input_task_id or model_url must be provided",
-      })
-      .refine((data) => data.text_style_prompt || data.image_style_url, {
-        message: "At least one of text_style_prompt or image_style_url must be provided",
-      }),
+    }),
   },
   async (args) => jsonResponse(await client.post("/v1/retexture", args)),
 );
